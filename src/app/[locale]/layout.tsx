@@ -30,8 +30,6 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} dir={dir}>
-      <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script dangerouslySetInnerHTML={{ __html: `eruda.init();` }} />
       <body className={locale === "ar" ? cairo.className : inter.className}>
         <NextIntlClientProvider messages={messages}>
           <CartProvider>
