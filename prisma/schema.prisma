@@ -1,0 +1,132 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  STAFF
+}
+
+enum OrderStatus {
+  PENDING     // created, waiting for payment
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  FAWRY_REF      // pay at kiosk
+  FAWRY_CARD
+  FAWRY_WALLET   // covers Vodafone Cash via Fawry
+  CASH_ON_DELIVERY
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(STAFF)
+  createdAt DateTime @default(now())
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  nameAr   String
+  nameEn   String?
+  slug     String    @unique
+  products Product[]
+}
+
+model Product {
+  id          String    @id @default(cuid())
+  nameAr      String
+  nameEn      String?
+  descriptionAr String?
+  descriptionEn String?
+  slug        String    @unique
+  images      String[]  // array of URLs
+  isActive    Boolean   @default(true)
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
+  variants    ProductVariant[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// e.g. 250g / Medium Roast / Ground
+model ProductVariant {
+  id          String   @id @default(cuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  weightGrams Int?               // 250, 500, 1000
+  roastLevel  String?            // "Light" | "Medium" | "Dark" - keep as string for flexibility
+  grindType   String?            // "Whole Bean" | "Fine" | "Coarse" etc.
+
+  sku         String   @unique
+  price       Decimal  @db.Decimal(10, 2)  // EGP
+  stock       Int      @default(0)
+  lowStockAt  Int      @default(5)          // for admin alerts
+
+  orderItems  OrderItem[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([productId])
+}
+
+model Order {
+  id              String        @id @default(cuid())
+  orderNumber     String        @unique  // human-friendly, e.g. BS-10234
+
+  customerName    String
+  customerPhone   String
+  customerEmail   String?
+  addressLine     String
+  city            String
+  notes           String?
+
+  status          OrderStatus   @default(PENDING)
+  paymentMethod   PaymentMethod
+  fawryRefNumber  String?       // returned by Fawry, used for tracking/webhook match
+
+  subtotal        Decimal       @db.Decimal(10, 2)
+  shippingFee     Decimal       @db.Decimal(10, 2) @default(0)
+  total           Decimal       @db.Decimal(10, 2)
+
+  items           OrderItem[]
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([status])
+  @@index([fawryRefNumber])
+}
+
+model OrderItem {
+  id          String          @id @default(cuid())
+  orderId     String
+  order       Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  variantId   String
+  variant     ProductVariant  @relation(fields: [variantId], references: [id])
+
+  quantity    Int
+  priceAtSale Decimal         @db.Decimal(10, 2) // snapshot, since price can change later
+
+  @@index([orderId])
+}
