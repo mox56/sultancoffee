@@ -1,4 +1,4 @@
-// src/app/api/fawry/callback/route.ts
+﻿// src/app/api/fawry/callback/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyFawryCallbackSignature } from "@/lib/fawry";
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
       ) {
         await prisma.order.update({
           where: { id: order.id },
-          data: { status: OrderStatus.CANCELLED, fawryRefNumber },
+          data: { status: OrderStatus.CANCELLED, paymentRefNumber: fawryRefNumber },
         });
       }
     }

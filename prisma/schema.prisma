@@ -28,9 +28,8 @@ enum OrderStatus {
 }
 
 enum PaymentMethod {
-  FAWRY_REF      // pay at kiosk
-  FAWRY_CARD
-  FAWRY_WALLET   // covers Vodafone Cash via Fawry
+  PAYMOB_CARD
+  PAYMOB_WALLET   // covers Vodafone Cash via Paymob
   CASH_ON_DELIVERY
 }
 
@@ -96,13 +95,16 @@ model Order {
   customerName    String
   customerPhone   String
   customerEmail   String?
-  addressLine     String
+  addressLine     String   // street name/description
+  building        String
+  floor           String
+  apartment       String
   city            String
   notes           String?
 
   status          OrderStatus   @default(PENDING)
   paymentMethod   PaymentMethod
-  fawryRefNumber  String?       // returned by Fawry, used for tracking/webhook match
+  paymentRefNumber String?
 
   subtotal        Decimal       @db.Decimal(10, 2)
   shippingFee     Decimal       @db.Decimal(10, 2) @default(0)
@@ -114,7 +116,7 @@ model Order {
   updatedAt       DateTime      @updatedAt
 
   @@index([status])
-  @@index([fawryRefNumber])
+  @@index([paymentRefNumber])
 }
 
 model OrderItem {

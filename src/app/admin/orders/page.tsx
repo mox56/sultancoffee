@@ -31,26 +31,26 @@ export default async function AdminOrdersPage() {
   return (
     <div className="p-8 max-w-6xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-stone-900">الطلبات</h1>
-        <p className="text-stone-500 text-sm mt-1">{orders.length} طلب</p>
+        <h1 className="text-2xl font-semibold text-stone-900">???????</h1>
+        <p className="text-stone-500 text-sm mt-1">{orders.length} ???</p>
       </div>
 
       {orders.length === 0 ? (
         <div className="border border-dashed border-stone-300 rounded-lg py-16 text-center">
-          <p className="text-stone-500">لا توجد طلبات بعد.</p>
+          <p className="text-stone-500">?? ???? ????? ???.</p>
         </div>
       ) : (
         <div className="border border-stone-200 rounded-lg overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>رقم الطلب</TableHead>
-                <TableHead>العميل</TableHead>
-                <TableHead>المنتجات</TableHead>
-                <TableHead>الإجمالي</TableHead>
-                <TableHead>الدفع</TableHead>
-                <TableHead>الحالة</TableHead>
-                <TableHead>التاريخ</TableHead>
+                <TableHead>??? ?????</TableHead>
+                <TableHead>??????</TableHead>
+                <TableHead>????????</TableHead>
+                <TableHead>????????</TableHead>
+                <TableHead>?????</TableHead>
+                <TableHead>??????</TableHead>
+                <TableHead>???????</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -64,26 +64,30 @@ export default async function AdminOrdersPage() {
                     <div className="text-sm text-stone-500" dir="ltr">
                       {order.customerPhone}
                     </div>
+                    <div className="text-xs text-stone-400 mt-1">
+                      {order.addressLine} � {"????"} {order.building}, {"???"}{" "}
+                      {order.floor}, {"???"} {order.apartment}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="text-sm text-stone-600 space-y-0.5">
                       {order.items.map((item) => (
                         <div key={item.id}>
-                          {item.quantity}× {item.variant.product.nameAr}
+                          {item.quantity}� {item.variant.product.nameAr}
                           {item.variant.weightGrams &&
-                            ` (${item.variant.weightGrams}جم)`}
+                            ` (${item.variant.weightGrams}??)`}
                         </div>
                       ))}
                     </div>
                   </TableCell>
                   <TableCell className="font-medium">
-                    {Number(order.total).toFixed(2)} ج.م
+                    {Number(order.total).toFixed(2)} ?.?
                   </TableCell>
                   <TableCell>
                     <span className="text-xs text-stone-500">
                       {order.paymentMethod === "CASH_ON_DELIVERY"
-                        ? "الدفع عند الاستلام"
-                        : "فوري"}
+                        ? "????? ??? ????????"
+                        : "????"}
                     </span>
                   </TableCell>
                   <TableCell>

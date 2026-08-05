@@ -1,4 +1,4 @@
-// src/app/[locale]/checkout/page.tsx
+﻿// src/app/[locale]/checkout/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -20,10 +20,13 @@ export default function CheckoutPage() {
     customerPhone: "",
     customerEmail: "",
     addressLine: "",
+    building: "",
+    floor: "",
+    apartment: "",
     city: "",
     notes: "",
   });
-  const [paymentMethod, setPaymentMethod] = useState<"CASH_ON_DELIVERY" | "FAWRY_REF">(
+  const [paymentMethod, setPaymentMethod] = useState<"CASH_ON_DELIVERY" | "PAYMOB_CARD">(
     "CASH_ON_DELIVERY"
   );
   const [submitting, setSubmitting] = useState(false);
@@ -62,16 +65,34 @@ export default function CheckoutPage() {
           customerEmail: form.customerEmail || undefined,
           notes: form.notes || undefined,
           paymentMethod,
-          items: items.map((i) => ({ variantId: i.variantId, quantity: i.quantity })),
+          items: items.map((i) => ({
+            variantId: i.variantId,
+            quantity: i.quantity,
+          })),
         }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error ?? (isAr ? "فشل إنشاء الطلب" : "Failed to create order"));
+        throw new Error(
+          data.error ?? (isAr ? "فشل إنشاء الطلب" : "Failed to create order"),
+        );
       }
+      if (paymentMethod === "PAYMOB_CARD") {
+        // Redirect to Paymob's hosted iframe instead of going straight to confirmation
+        const chargeRes = await fetch("/api/paymob/charge", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId: data.order.id }),
+        });
+        const chargeData = await chargeRes.json();
+        if (!chargeRes.ok)
+          throw new Error(chargeData.error ?? "Payment initiation failed");
 
+        window.location.href = chargeData.iframeUrl;
+        return;
+      }
       clearCart();
       router.push(`/order-confirmation/${data.order.orderNumber}`);
     } catch (err) {
@@ -84,7 +105,9 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-[#1C1410] text-[#F5EFE6]">
       <main className="px-6 py-10 max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold mb-1">{isAr ? "إتمام الطلب" : "Checkout"}</h1>
+        <h1 className="text-2xl font-bold mb-1">
+          {isAr ? "إتمام الطلب" : "Checkout"}
+        </h1>
         <div className="w-12 h-px bg-[#C9A66B] mb-8" />
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -130,7 +153,7 @@ export default function CheckoutPage() {
 
             <div>
               <label className="block text-sm text-[#B8A78F] mb-1.5">
-                {isAr ? "العنوان" : "Address"}
+                {isAr ? "الشارع / المنطقة" : "Street / Area"}
               </label>
               <input
                 required
@@ -138,6 +161,45 @@ export default function CheckoutPage() {
                 onChange={(e) => update("addressLine", e.target.value)}
                 className="w-full px-3 py-2 rounded-md bg-[#241B14] border border-[#3A2D22] focus:border-[#C9A66B] outline-none"
               />
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block text-sm text-[#B8A78F] mb-1.5">
+                  {isAr ? "المبنى" : "Building"}
+                </label>
+                <input
+                  required
+                  dir="ltr"
+                  value={form.building}
+                  onChange={(e) => update("building", e.target.value)}
+                  className="w-full px-3 py-2 rounded-md bg-[#241B14] border border-[#3A2D22] focus:border-[#C9A66B] outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-[#B8A78F] mb-1.5">
+                  {isAr ? "الدور" : "Floor"}
+                </label>
+                <input
+                  required
+                  dir="ltr"
+                  value={form.floor}
+                  onChange={(e) => update("floor", e.target.value)}
+                  className="w-full px-3 py-2 rounded-md bg-[#241B14] border border-[#3A2D22] focus:border-[#C9A66B] outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-[#B8A78F] mb-1.5">
+                  {isAr ? "الشقة" : "Apartment"}
+                </label>
+                <input
+                  required
+                  dir="ltr"
+                  value={form.apartment}
+                  onChange={(e) => update("apartment", e.target.value)}
+                  className="w-full px-3 py-2 rounded-md bg-[#241B14] border border-[#3A2D22] focus:border-[#C9A66B] outline-none"
+                />
+              </div>
             </div>
 
             <div>
@@ -183,11 +245,14 @@ export default function CheckoutPage() {
               </button>
               <button
                 type="button"
-                disabled
-                title={isAr ? "غير متاح حالياً" : "Currently unavailable"}
-                className="w-full text-start px-4 py-3 rounded-md border border-[#3A2D22] opacity-40 cursor-not-allowed"
+                onClick={() => setPaymentMethod("PAYMOB_CARD")}
+                className={`w-full text-start px-4 py-3 rounded-md border transition-colors ${
+                  paymentMethod === "PAYMOB_CARD"
+                    ? "border-[#C9A66B] bg-[#C9A66B]/10"
+                    : "border-[#3A2D22]"
+                }`}
               >
-                {isAr ? "فوري (قريباً)" : "Fawry (coming soon)"}
+                {isAr ? "بطاقة / محفظة إلكترونية" : "Card / Mobile Wallet"}
               </button>
             </div>
           </div>
@@ -196,11 +261,15 @@ export default function CheckoutPage() {
           <div className="border-t border-[#3A2D22] pt-4 space-y-2 text-sm">
             <div className="flex justify-between text-[#B8A78F]">
               <span>{isAr ? "المجموع الفرعي" : "Subtotal"}</span>
-              <span dir="ltr">{subtotal} {currency}</span>
+              <span dir="ltr">
+                {subtotal} {currency}
+              </span>
             </div>
             <div className="flex justify-between text-[#B8A78F]">
               <span>{isAr ? "الشحن" : "Shipping"}</span>
-              <span dir="ltr">{SHIPPING_FEE} {currency}</span>
+              <span dir="ltr">
+                {SHIPPING_FEE} {currency}
+              </span>
             </div>
             <div className="flex justify-between font-semibold text-[#F5EFE6] text-base pt-2">
               <span>{isAr ? "الإجمالي" : "Total"}</span>

@@ -1,4 +1,4 @@
-// src/lib/order-fulfillment.ts
+﻿// src/lib/order-fulfillment.ts
 import { prisma } from "@/lib/db";
 import { OrderStatus } from "../generated/prisma/enums";
 
@@ -56,7 +56,7 @@ export async function confirmOrderPayment(orderId: string, fawryRefNumber?: stri
       where: { id: order.id },
       data: {
         status: OrderStatus.PAID,
-        ...(fawryRefNumber ? { fawryRefNumber } : {}),
+        ...(fawryRefNumber ? { paymentRefNumber: fawryRefNumber } : {}),
       },
     });
   });
